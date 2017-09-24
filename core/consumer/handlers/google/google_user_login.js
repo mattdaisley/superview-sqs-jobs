@@ -1,17 +1,24 @@
 
-const google  = require('googleapis'),
-      config  = require('../../config'),
-      utils   = require('../../utils'),
-      DB      = require('../../db'),
-      knex    = require('knex')({client: 'mysql'}),
-      OAuth2  = google.auth.OAuth2,
-      YouTube = google.youtube('v3');
+const google       = require('googleapis'),
+      pubSubHubbub = require("pubsubhubbub"),
+      config       = require('../../config'),
+      utils        = require('../../utils'),
+      DB           = require('../../db'),
+      knex         = require('knex')({client: 'mysql'}),
+      OAuth2       = google.auth.OAuth2,
+      YouTube      = google.youtube('v3');
 
 const oauth2Client = new OAuth2(
     config.google.clientId,
     config.google.secret,
     config.appUrl + '/oauth2/google/oauth2callback'
 );
+
+const pubsub = pubSubHubbub.createServer({
+  callbackUrl: "https://pubsubhub.superview.tv",
+  secret: "MyTopSecret"
+});
+const youtubeSubHub = "http://pubsubhubbub.appspot.com/";
 
 const MAX_RESULTS = 50;
 
@@ -35,6 +42,14 @@ googleUserLogin = ( body, done ) => {
           Promise.all(addSubscriptionsPromises)
             .then( () => resolve( newSubscriptions ) )
             .catch( (err) => reject( err) )
+        })
+      })
+      .then( newSubscriptions => {
+        return new Promise( (resolve, reject) => {
+          let pubsubhubSubscribes = newSubscriptions.map( subscription => subscribeToPubsubhub( subscription ))
+          Promise.all(pubsubhubSubscribes)
+            .then( () => resolve( newSubscriptions ) )
+            .catch( err => reject( err ) )
         })
       })
       .then( newSubscriptions => {
@@ -140,6 +155,32 @@ getSubscriptionsAlreadyProcessed = ( google_user_id, subscriptions ) => {
   });
 }
 
+addUserSubscriptions = ( google_user_id, channelId ) => {
+  return new Promise( (resolve, reject ) => {
+    DB.connect( connection => {
+      connection.query( 'INSERT INTO ' + config.db.tablePrefix + 'google_users_subscriptions ( google_user_id, google_channel_id ) VALUES (?,?)', [google_user_id, channelId], (err, response) => {
+        connection.release();
+        // console.log(err);
+        if ( err && err.code !== 'ER_DUP_ENTRY' ) {
+          reject( err ); 
+          return; 
+        }
+
+        resolve( channelId );
+      });
+    })
+  })
+}
+
+subscribeToPubsubhub = ( channelId ) => {
+  return new Promise( (resolve, reject) => {
+    // const topic = "https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + channelId
+    pubsub.subscribe(topic, youtubeSubHub);
+    // console.log('subscribe to: ', topic, 'at', youtubeSubHub);
+    resolve();
+  })
+}
+
 
 getPlaylists = ( channelId, nextPage ) => {
   
@@ -227,23 +268,6 @@ saveVideos = ( { channelId, videos } ) => {
       })
       .catch( err => { console.log(err); reject(err); } )
 
-  })
-}
-
-addUserSubscriptions = ( google_user_id, channelId ) => {
-  return new Promise( (resolve, reject ) => {
-    DB.connect( connection => {
-      connection.query( 'INSERT INTO ' + config.db.tablePrefix + 'google_users_subscriptions ( google_user_id, google_channel_id ) VALUES (?,?)', [google_user_id, channelId], (err, response) => {
-        connection.release();
-        // console.log(err);
-        if ( err && err.code !== 'ER_DUP_ENTRY' ) {
-          reject( err ); 
-          return; 
-        }
-
-        resolve( channelId );
-      });
-    })
   })
 }
 

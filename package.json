@@ -12,6 +12,7 @@
     "lodash": "^4.13.1",
     "merge": "^1.2.0",
     "mysql": "^2.10.2",
+    "pubsubhubbub": "^0.4.1",
     "request": "^2.73.0",
     "sqs-consumer": "^3.7.0",
     "twitch-api-v5": "^2.0.2"
