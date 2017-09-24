@@ -25,14 +25,21 @@ googleUserLogin = ( body, done ) => {
 
   try {
     getSubscriptions()
+      .then( userSubscriptions => {
+        return getNewSubscriptions( google_user_id, userSubscriptions )
+      })
+      .then( ( { userSubscriptions, newSubscriptions } ) => {
+        return new Promise( (resolve, reject) => {
+          console.log('userSubscriptions, newSubscriptions:', userSubscriptions, newSubscriptions );
+          let addSubscriptionsPromises = userSubscriptions.map( subscription => addUserSubscriptions(google_user_id, subscription))
+          Promise.all(addSubscriptionsPromises)
+            .then( () => resolve( newSubscriptions ) )
+            .catch( (err) => reject( err) )
+        })
+      })
       .then( newSubscriptions => {
         console.log('newSubscriptions count:', newSubscriptions.length );
-        let addSubscriptionsPromises = newSubscriptions.map( subscription => addUserSubscriptions(google_user_id, subscription))
-        return Promise.all(addSubscriptionsPromises);
-      })
-      .then( finalSubsriptions => {
-        console.log('finalSubsriptions count:', finalSubsriptions.length );
-        let playlistRequests = finalSubsriptions.map( subscription => getPlaylists( subscription ) )
+        let playlistRequests = newSubscriptions.map( subscription => getPlaylists( subscription ) )
         return Promise.all(playlistRequests)
       })
       .then( arrUploadsPlaylists => {
@@ -84,15 +91,7 @@ getSubscriptions = ( nextPage ) => {
                 resolve( [ ...subscriptions, ...result ] );
               })
           } else {
-            getExistingSubscriptions( subscriptions )
-              .then( existingSubscriptions => {
-                console.log(existingSubscriptions);
-                let newSubscriptions = subscriptions.filter( subscription => {
-                  console.log(subscription, existingSubscriptions.indexOf(subscription));
-                  return (existingSubscriptions.indexOf(subscription) < 0)
-                })
-                resolve(newSubscriptions)
-              })
+            resolve( subscriptions );
           }
         }
       } else {
@@ -101,6 +100,44 @@ getSubscriptions = ( nextPage ) => {
     })
 
   })
+}
+
+getNewSubscriptions = ( google_user_id, subscriptions ) => {
+  
+  return new Promise( (resolve, reject) => {
+
+    getSubscriptionsAlreadyProcessed( google_user_id, subscriptions )
+      .then( existingSubscriptions => {
+        console.log('existingSubs', existingSubscriptions);
+        let newSubscriptions = subscriptions.filter( subscription => {
+          console.log(subscription, existingSubscriptions.indexOf(subscription));
+          return (existingSubscriptions.indexOf(subscription) < 0)
+        })
+        console.log('resolve from getnewSubs', subscriptions.length, newSubscriptions.length);
+        resolve( { userSubscriptions: subscriptions, newSubscriptions: newSubscriptions } )
+      })
+      .catch( err => reject(err) )
+
+  })
+}
+
+getSubscriptionsAlreadyProcessed = ( google_user_id, subscriptions ) => {
+  return new Promise( (resolve, reject) => {
+      DB.connect( connection => {
+          var query = knex(config.db.tablePrefix + 'google_users_subscriptions')
+              .select('google_channel_id')
+              .whereIn('google_channel_id', subscriptions);
+
+          console.log(query.toString());
+          connection.query( query.toString(), (err, subscriptions) => {
+              connection.release();
+              if ( err ) { reject(err); return; }
+              console.log('subscriptions already processed:', subscriptions);
+              resolve(subscriptions.map( row => row.google_channel_id ));
+          });
+
+      });
+  });
 }
 
 
@@ -193,31 +230,16 @@ saveVideos = ( { channelId, videos } ) => {
   })
 }
 
-getExistingSubscriptions = ( subscriptions ) => {
-  return new Promise( (resolve, reject) => {
-      DB.connect( connection => {
-          var query = knex(config.db.tablePrefix + 'google_users_subscriptions')
-              .select('google_channel_id')
-              .whereIn('google_channel_id', subscriptions);
-
-          connection.query( query.toString(), (err, subscriptions) => {
-              connection.release();
-              if ( err ) { reject(err); return; }
-
-              resolve(subscriptions.map( row => row.google_channel_id ));
-          });
-
-      });
-  });
-}
-
 addUserSubscriptions = ( google_user_id, channelId ) => {
   return new Promise( (resolve, reject ) => {
     DB.connect( connection => {
       connection.query( 'INSERT INTO ' + config.db.tablePrefix + 'google_users_subscriptions ( google_user_id, google_channel_id ) VALUES (?,?)', [google_user_id, channelId], (err, response) => {
         connection.release();
         // console.log(err);
-        if ( err ) { reject(err); return; }
+        if ( err && err.code !== 'ER_DUP_ENTRY' ) {
+          reject( err ); 
+          return; 
+        }
 
         resolve( channelId );
       });

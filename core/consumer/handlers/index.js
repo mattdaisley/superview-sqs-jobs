@@ -1,6 +1,6 @@
 
 const 
-  { googleUserLogin }   = require('./google')
+  { googleUserLogin, googleYoutubePubsub }   = require('./google')
 
 
 messageHandler = (message, done) => {
@@ -11,9 +11,13 @@ messageHandler = (message, done) => {
       const type = message.MessageAttributes.type.StringValue
       const messageBody = JSON.parse(message.Body);
       
+      console.log(type);
       switch( type ) {
         case 'GOOGLE_USER_LOGIN':
           googleUserLogin( messageBody, done );
+          return;
+        case 'GOOGLE_YOUTUBE_PUBSUB':
+          googleYoutubePubsub( messageBody, done );
           return;
         default:
           console.log('unhandled message: ', message);

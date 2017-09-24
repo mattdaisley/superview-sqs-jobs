@@ -9,7 +9,7 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...  
-      - docker build -t superview-auth .
+      - docker build -t superview-sqs-jobs .
       - docker tag superview-sqs-jobs:latest 970556883193.dkr.ecr.us-east-1.amazonaws.com/superview-sqs-jobs:latest      
   post_build:
     commands:
