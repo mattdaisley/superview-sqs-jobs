@@ -10,9 +10,9 @@ phases:
       - echo Build started on `date`
       - echo Building the Docker image...  
       - docker build -t superview-auth .
-      - docker tag superview-auth:latest 970556883193.dkr.ecr.us-east-1.amazonaws.com/superview-auth:latest      
+      - docker tag superview-sqs-jobs:latest 970556883193.dkr.ecr.us-east-1.amazonaws.com/superview-sqs-jobs:latest      
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push 970556883193.dkr.ecr.us-east-1.amazonaws.com/superview-auth:latest
+      - docker push 970556883193.dkr.ecr.us-east-1.amazonaws.com/superview-sqs-jobs:latest
