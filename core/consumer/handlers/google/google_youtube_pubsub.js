@@ -26,7 +26,7 @@ addVideo = ( channelId, video ) => {
     DB.connect( connection => {
       connection.query( 'INSERT INTO ' + config.db.tablePrefix + 'google_subscriptions_uploads ( google_channel_id, google_video_id, published_at ) VALUES (?,?,?)', [channelId, video.videoId, video.videoPublishedAt], (err, response) => {
         connection.release();
-        // console.log(err);
+        if ( err ) console.log('google_youtube_pubsub - addVideo error:', err);
         if ( err && err.code !== 'ER_DUP_ENTRY' ) {
           reject( err ); 
           return; 

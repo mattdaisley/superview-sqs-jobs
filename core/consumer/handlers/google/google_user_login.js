@@ -37,7 +37,7 @@ googleUserLogin = ( body, done ) => {
       })
       .then( ( { userSubscriptions, newSubscriptions } ) => {
         return new Promise( (resolve, reject) => {
-          console.log('userSubscriptions, newSubscriptions:', userSubscriptions, newSubscriptions );
+          // console.log('userSubscriptions, newSubscriptions:', userSubscriptions, newSubscriptions );
           let addSubscriptionsPromises = userSubscriptions.map( subscription => addUserSubscriptions(google_user_id, subscription))
           Promise.all(addSubscriptionsPromises)
             .then( () => resolve( newSubscriptions ) )
@@ -110,6 +110,7 @@ getSubscriptions = ( nextPage ) => {
           }
         }
       } else {
+        console.log('getSubscriptions - YouTube.subscriptions.list error', err)
         reject(err);
       }
     })
@@ -123,12 +124,12 @@ getNewSubscriptions = ( google_user_id, subscriptions ) => {
 
     getSubscriptionsAlreadyProcessed( google_user_id, subscriptions )
       .then( existingSubscriptions => {
-        console.log('existingSubs', existingSubscriptions);
+        // console.log('existingSubs', existingSubscriptions);
         let newSubscriptions = subscriptions.filter( subscription => {
-          console.log(subscription, existingSubscriptions.indexOf(subscription));
+          // console.log(subscription, existingSubscriptions.indexOf(subscription));
           return (existingSubscriptions.indexOf(subscription) < 0)
         })
-        console.log('resolve from getnewSubs', subscriptions.length, newSubscriptions.length);
+        // console.log('resolve from getnewSubs', subscriptions.length, newSubscriptions.length);
         resolve( { userSubscriptions: subscriptions, newSubscriptions: newSubscriptions } )
       })
       .catch( err => reject(err) )
@@ -143,11 +144,15 @@ getSubscriptionsAlreadyProcessed = ( google_user_id, subscriptions ) => {
               .select('google_channel_id')
               .whereIn('google_channel_id', subscriptions);
 
-          console.log(query.toString());
+          // console.log(query.toString());
           connection.query( query.toString(), (err, subscriptions) => {
               connection.release();
-              if ( err ) { reject(err); return; }
-              console.log('subscriptions already processed:', subscriptions);
+              if ( err ) { 
+                console.log('getSubscriptionsAlreadyProcessed error', err)
+                reject(err); 
+                return; 
+              }
+              // console.log('subscriptions already processed:', subscriptions);
               resolve(subscriptions.map( row => row.google_channel_id ));
           });
 
@@ -160,7 +165,7 @@ addUserSubscriptions = ( google_user_id, channelId ) => {
     DB.connect( connection => {
       connection.query( 'INSERT INTO ' + config.db.tablePrefix + 'google_users_subscriptions ( google_user_id, google_channel_id ) VALUES (?,?)', [google_user_id, channelId], (err, response) => {
         connection.release();
-        // console.log(err);
+        if ( err ) console.log('addUserSubscriptions error', err);
         if ( err && err.code !== 'ER_DUP_ENTRY' ) {
           reject( err ); 
           return; 
@@ -211,7 +216,7 @@ getPlaylists = ( channelId, nextPage ) => {
           }
         }
       } else {
-        console.log('getPlaylists error');
+        console.log('getPlaylists - YouTube.channels.list error:', err);
         reject(err);
       }
     })
@@ -249,7 +254,7 @@ getPlaylistItems = ( { channelId, uploadsPlaylistId } ) => {
           resolve( { channelId: channelId, uploadsPlaylistId: uploadsPlaylistId, videos: [] } )
         }
       } else {
-        console.log(err);
+        console.log('getPlaylistItems - YouTube.playlistItems.list error:', err);
         reject(err);
       }
     })
@@ -266,7 +271,7 @@ saveVideos = ( { channelId, videos } ) => {
       .then( () => {
         resolve();
       })
-      .catch( err => { console.log(err); reject(err); } )
+      .catch( err => { console.log('saveVideos error:', err); reject(err); } )
 
   })
 }
@@ -277,7 +282,8 @@ addVideo = ( channelId, video ) => {
     DB.connect( connection => {
       connection.query( 'INSERT INTO ' + config.db.tablePrefix + 'google_subscriptions_uploads ( google_channel_id, google_video_id, published_at ) VALUES (?,?,?)', [channelId, video.videoId, video.videoPublishedAt], (err, response) => {
         connection.release();
-        // console.log(err);
+        
+        if ( err ) console.log('addVideo - db error:', err);
         if ( err ) { reject(err); return; }
 
         resolve( response );
