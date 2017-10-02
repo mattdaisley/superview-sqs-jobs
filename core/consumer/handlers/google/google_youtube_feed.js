@@ -4,7 +4,7 @@ const config  = require('../../config'),
       DB      = require('../../db'),
       knex    = require('knex')({client: 'mysql'}),
 
-googleYoutubePubsub = ( body, done ) => {
+googleYoutubeFeed = ( body, done ) => {
 
   if ( body && body['yt:videoId'] && body['yt:channelId'] ) {
     const channelId = body['yt:channelId'][0];
@@ -38,4 +38,4 @@ addVideo = ( channelId, video ) => {
   })
 }
 
-module.exports = googleYoutubePubsub;
+module.exports = googleYoutubeFeed;

@@ -1,7 +1,9 @@
-const googleUserLogin     = require('./google_user_login');
-const googleYoutubePubsub = require('./google_youtube_pubsub');
+const googleUserLogin        = require('./google_user_login'),
+      googleYoutubeFeed      = require('./google_youtube_feed'),
+      googleYoutubeSubscribe = require('./google_youtube_subscribe')
 
 module.exports = {
     googleUserLogin: googleUserLogin,
-    googleYoutubePubsub: googleYoutubePubsub,
+    googleYoutubeFeed: googleYoutubeFeed,
+    googleYoutubeSubscribe: googleYoutubeSubscribe,
 };

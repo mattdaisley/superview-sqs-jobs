@@ -1,6 +1,6 @@
 
 const 
-  { googleUserLogin, googleYoutubePubsub }   = require('./google')
+  { googleUserLogin, googleYoutubeFeed, googleYoutubeSubscribe }   = require('./google')
 
 
 messageHandler = (message, done) => {
@@ -16,8 +16,11 @@ messageHandler = (message, done) => {
         case 'GOOGLE_USER_LOGIN':
           googleUserLogin( messageBody, done );
           return;
-        case 'GOOGLE_YOUTUBE_PUBSUB':
-          googleYoutubePubsub( messageBody, done );
+        case 'GOOGLE_YOUTUBE_FEED':
+          googleYoutubeFeed( messageBody, done );
+          return;
+        case 'GOOGLE_YOUTUBE_SUBSCRIBE':
+          googleYoutubeSubscribe( messageBody, done );
           return;
         default:
           console.log('unhandled message: ', message);
