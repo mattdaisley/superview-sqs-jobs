@@ -179,7 +179,7 @@ addUserSubscriptions = ( google_user_id, channelId ) => {
 
 subscribeToPubsubhub = ( channelId ) => {
   return new Promise( (resolve, reject) => {
-    // const topic = "https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + channelId
+    const topic = "https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + channelId
     pubsub.subscribe(topic, youtubeSubHub);
     // console.log('subscribe to: ', topic, 'at', youtubeSubHub);
     resolve();
