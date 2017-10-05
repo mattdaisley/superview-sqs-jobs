@@ -12,6 +12,7 @@ googleYoutubeFeed = ( body, done ) => {
 
     checkVideoExists( channelId, video.videoId )
       .then( ( existingVideo ) => {
+        console.log('Processed video', video.videoId, 'isNew', existingVideo.length === 0)
         if ( existingVideo.length > 0 ) {
           return updateVideo( channelId, video )
         } else {

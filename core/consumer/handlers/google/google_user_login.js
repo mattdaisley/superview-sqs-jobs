@@ -38,7 +38,7 @@ googleUserLogin = ( body, done ) => {
       .then( ( { userSubscriptions, newSubscriptions } ) => {
         return new Promise( (resolve, reject) => {
           // console.log('userSubscriptions, newSubscriptions:', userSubscriptions, newSubscriptions );
-          let addSubscriptionsPromises = userSubscriptions.map( subscription => addUserSubscriptions(google_user_id, subscription))
+          let addSubscriptionsPromises = newSubscriptions.map( subscription => addUserSubscriptions(google_user_id, subscription))
           Promise.all(addSubscriptionsPromises)
             .then( () => resolve( newSubscriptions ) )
             .catch( (err) => reject( err) )
@@ -266,18 +266,49 @@ saveVideos = ( { channelId, videos } ) => {
 
   return new Promise( (resolve, reject) => {
     
-    let addVideosPromises = videos.map( video => addVideo(channelId, video) )
-    Promise.all(addVideosPromises)
-      .then( () => {
-        resolve();
+    let checkVideoExistsPromises = videos.map( video => checkYoutubeVideoExists(channelId, video) )
+    Promise.all(checkVideoExistsPromises)
+      .then( ( checkVideoExistsResults ) => {
+        
+        let addUpdateVideosPromises = checkVideoExistsResults.map( ({existingVideo, video}) => {
+          console.log('checkVideoExistsResults', existingVideo, video);
+          if ( existingVideo.length > 0 ) {
+            return updateYoutubeVideo( channelId, video )
+          } else {
+            return addYoutubeVideo( channelId, video )
+          }
+        })
+        return Promise.all(addUpdateVideosPromises)
       })
+      .then( () => resolve() )
       .catch( err => { console.log('saveVideos error:', err); reject(err); } )
 
   })
 }
 
+checkYoutubeVideoExists = ( channelId, video ) => {
+  return new Promise( (resolve, reject) => {
+      DB.connect( connection => {
+          var query = knex(config.db.tablePrefix + 'google_subscriptions_uploads')
+              .select('google_channel_id')
+              .where( {'google_video_id': video.videoId} );
 
-addVideo = ( channelId, video ) => {
+          connection.query( query.toString(), (err, result) => {
+            console.log('in checkVideoExists result', result);
+              connection.release();
+              
+              if ( err ) console.log('checkVideoExists - db error:', err);
+              if ( err ) { reject(err); return; }
+
+              resolve({existingVideo: result, video: video});
+          });
+
+      });
+  });
+}
+
+
+addYoutubeVideo = ( channelId, video ) => {
   return new Promise( (resolve, reject ) => {
     DB.connect( connection => {
       connection.query( 'INSERT INTO ' + config.db.tablePrefix + 'google_subscriptions_uploads ( google_channel_id, google_video_id, published_at ) VALUES (?,?,?)', [channelId, video.videoId, video.videoPublishedAt], (err, response) => {
@@ -285,6 +316,32 @@ addVideo = ( channelId, video ) => {
         
         if ( err ) console.log('addVideo - db error:', err);
         if ( err ) { reject(err); return; }
+
+        resolve( response );
+      });
+    })
+  })
+}
+
+updateYoutubeVideo = ( channelId, video ) => {
+  return new Promise( (resolve, reject ) => {
+    DB.connect( connection => {
+      
+      var query = knex(config.db.tablePrefix + 'google_subscriptions_uploads')
+        .where('google_video_id', video.videoId)
+        .update({
+          'google_channel_id': channelId,
+          'google_video_id': video.videoId,
+          'published_at': video.videoPublishedAt,
+        })
+      
+      connection.query( query.toString(), (err, response) => {
+        connection.release();
+        if ( err ) console.log('google_youtube_pubsub - updateVideo error:', err);
+        if ( err && err.code !== 'ER_DUP_ENTRY' ) {
+          reject( err ); 
+          return; 
+        }
 
         resolve( response );
       });
