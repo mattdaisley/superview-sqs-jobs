@@ -2,14 +2,15 @@
 const Consumer       = require('sqs-consumer'),
       path           = require('path'),
       AWS            = require('aws-sdk'),
-      config         = require('./config'),
+      cron           = require('node-cron'),
+      config         = require('../config'),
       messageHandler = require('./handlers'),
       credentials    = new AWS.SharedIniFileCredentials();
       
 
 // AWS.config.credentials = credentials;
 // AWS.config.update(config.aws);
-AWS.config.loadFromPath( path.join(__dirname, 'config', 'aws.json') );
+AWS.config.loadFromPath( path.join(__dirname, 'awsconfig', 'aws.json') );
 
 function init(options) {
 

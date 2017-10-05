@@ -1,8 +1,8 @@
 
 const moment  = require('moment'),
-      config  = require('../../config'),
-      utils   = require('../../utils'),
-      DB      = require('../../db'),
+      config  = require('../../../config'),
+      utils   = require('../../../utils'),
+      DB      = require('../../../db'),
       knex    = require('knex')({client: 'mysql'}),
 
 googleYoutubeSubscribe = ( body, done ) => {

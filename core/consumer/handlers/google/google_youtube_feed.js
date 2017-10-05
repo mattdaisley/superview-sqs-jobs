@@ -1,7 +1,7 @@
 
-const config  = require('../../config'),
-      utils   = require('../../utils'),
-      DB      = require('../../db'),
+const config  = require('../../../config'),
+      utils   = require('../../../utils'),
+      DB      = require('../../../db'),
       knex    = require('knex')({client: 'mysql'}),
 
 googleYoutubeFeed = ( body, done ) => {

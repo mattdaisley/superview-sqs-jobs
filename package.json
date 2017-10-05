@@ -13,6 +13,7 @@
     "merge": "^1.2.0",
     "moment": "^2.18.1",
     "mysql": "^2.10.2",
+    "node-cron": "^1.2.1",
     "pubsubhubbub": "^0.4.1",
     "request": "^2.73.0",
     "sqs-consumer": "^3.7.0",

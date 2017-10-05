@@ -4,7 +4,7 @@ var path      = require('path'),
 config.web = {};
 config.db  = {};
 
-config.appRoot      = path.resolve(__dirname, '../../../');
+config.appRoot      = path.resolve(__dirname, '../');
 config.corePath     = path.resolve(config.appRoot + '/core');
 
 config.apiBaseUri   = '/api/v0.1/';

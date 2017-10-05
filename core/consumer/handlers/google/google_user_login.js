@@ -1,9 +1,9 @@
 
 const google       = require('googleapis'),
       pubSubHubbub = require("pubsubhubbub"),
-      config       = require('../../config'),
-      utils        = require('../../utils'),
-      DB           = require('../../db'),
+      config       = require('../../../config'),
+      utils        = require('../../../utils'),
+      DB           = require('../../../db'),
       knex         = require('knex')({client: 'mysql'}),
       OAuth2       = google.auth.OAuth2,
       YouTube      = google.youtube('v3');

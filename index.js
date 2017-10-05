@@ -7,19 +7,21 @@ var
 // Proceed with startup
 coreApp 	= require('./core');
 
-
 const queueUrl = 'https://sqs.us-east-1.amazonaws.com/970556883193/SuperViewQueue'
-console.log('starting app for queue:', queueUrl);
 
-coreApp( {queueUrl} )
-  .then( consumerApp => {
+coreApp( { consumer: { queueUrl } } )
+  .then( apps => {
     
-    consumerApp.on('error', (err) => {
-      console.log(err.message);
-      done(err)
-    });
-      
-    consumerApp.start();
+    apps.consumer.then( consumerApp => {
+      consumerApp.on('error', (err) => console.log(err.message) );
+
+      console.log('starting app for queue:', queueUrl);
+      consumerApp.start();
+    })
+
+    apps.cronjobs.then( cronjobsApp => {
+      cronjobsApp.start()
+    })
 
   }).catch( err => {
     console.log(err);
